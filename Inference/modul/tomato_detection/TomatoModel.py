@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from numpy.core.numeric import argwhere
 import onnxruntime as ort
 
 
@@ -47,6 +46,7 @@ class TomatoModel:
         img = np.expand_dims(img, axis=0)
         img /= 255.0
         return img
+
     def __nmsbbox(self, bbox, max_confidence, min_mode=False):
         x1 = bbox[:, 0]
         y1 = bbox[:, 1]
@@ -115,13 +115,30 @@ class TomatoModel:
             bboxes_batch.append(bboxes)
 
         return bboxes_batch
+    
+    def __postprocess_result(self, postprocess_onnx, width, height):
+        # print(postprocess_onnx)
+        result_coors = []
+        labels = []
+
+        for x1, y1, x2, y2, _, conf, label in postprocess_onnx[0]:
+            x1 = int(x1 * width)
+            y1 = int(y1 * height)
+            x2 = int(x2 * width)
+            y2 = int(y2 * height)
+            result_coors.append(tuple((x1, y1, x2, y2)))
+            labels.append(f"{self.class_names[label]} conf: {conf}")
+        
+        return result_coors, labels
 
 
     def predict(self, img):
+        widht_ori, height_ori = img.shape[:2]
         img = self.__preprocessing_img(img)
         input_onnx = self.ort_session.get_inputs()[0].name
         output_onnx = self.ort_session.run(None, {input_onnx: img})
         postprocess_onnx = self.__postprocessing_onnx(output_onnx)
-        # result_outputs, label_outputs = self.__postprocess_result(postprocess_onnx)
-        print("Posprocess onnx:", postprocess_onnx)
-        # print("label_outputs:", label_outputs)
+        result_coors, labels = self.__postprocess_result(postprocess_onnx, widht_ori, height_ori)
+        # print("Posprocess onnx:", postprocess_onnx)
+        print("Coors :", result_coors)
+        print("label_outputs:", labels)
