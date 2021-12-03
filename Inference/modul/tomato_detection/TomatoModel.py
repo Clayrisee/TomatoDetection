@@ -144,3 +144,5 @@ class TomatoModel:
         print("Coors :", result_coors)
         print("label_outputs:", labels)
         print("hsi_values", hsi_values)
+        
+        return result_coors, labels
