@@ -18,19 +18,10 @@ print(imgR.shape)
 
 imgL, imgR = calibration.undistortRectify(imgL, imgR)
 
-# hsi_value = find_hsi_value(img)
-# print(hsi_value)
-# rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-# red = rgb[:, :, 0]
-# green = rgb[:, :, 1]
-# blue = rgb[:, :, 2]
-# print(red)
-# sum_red = np.sum(red)
-# print(sum_red)
-# print(sum_red/ 255)
-# Test Predict
 
+print(model.predict(img))
+# left_results = model.predict(imgL)
+# right_results = model.predict(imgR)
 
-model.predict(img)
-left_result_coors, left_labels = model.predict(imgL)
-right_result_coors, right_labels = model.predict(imgR)
+# print(left_results)
+# print(right_results)
