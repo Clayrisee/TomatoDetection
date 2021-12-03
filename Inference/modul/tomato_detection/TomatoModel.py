@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import onnxruntime as ort
-
+from .tomato_maturity_level import *
 
 class TomatoModel:
     def __init__(self, onnx_path="model/yolov4_1_3_416_416_static.onnx", threshold=0.5 ,input_size=(416, 416)):
@@ -134,11 +134,13 @@ class TomatoModel:
 
     def predict(self, img):
         widht_ori, height_ori = img.shape[:2]
-        img = self.__preprocessing_img(img)
+        preprocess_img = self.__preprocessing_img(img)
         input_onnx = self.ort_session.get_inputs()[0].name
-        output_onnx = self.ort_session.run(None, {input_onnx: img})
+        output_onnx = self.ort_session.run(None, {input_onnx: preprocess_img})
         postprocess_onnx = self.__postprocessing_onnx(output_onnx)
         result_coors, labels = self.__postprocess_result(postprocess_onnx, widht_ori, height_ori)
+        hsi_values = calculate_tomato_maturity_level(img, result_coors)
         # print("Posprocess onnx:", postprocess_onnx)
         print("Coors :", result_coors)
         print("label_outputs:", labels)
+        print("hsi_values", hsi_values)
