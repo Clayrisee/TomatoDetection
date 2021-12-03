@@ -72,7 +72,7 @@ def find_hsi_value(img):
     r = normalize_layer(img[:,:,0])
     g = normalize_layer(img[:,:,1])
     b = normalize_layer(img[:,:,2])
-    print(r, g, b)
+    # print(r, g, b)
     return (find_hue_value(r,g, b), find_saturation_value(r, g, b), find_intensity_value(r, g, b))
 
 def limit_bbox_coors(bboxs, img):
