@@ -6,12 +6,17 @@ import cv2
 
 # Camera parameters to undistort and rectify images
 cv_file = cv2.FileStorage()
-cv_file.open('stereoMap.xml', cv2.FileStorage_READ)
+cv_file.open('modul/stereo_vision/stereoMap.xml', cv2.FileStorage_READ)
 
 stereoMapL_x = cv_file.getNode('stereoMapL_x').mat()
 stereoMapL_y = cv_file.getNode('stereoMapL_y').mat()
 stereoMapR_x = cv_file.getNode('stereoMapR_x').mat()
 stereoMapR_y = cv_file.getNode('stereoMapR_y').mat()
+
+print(stereoMapL_x)
+print(stereoMapL_y)
+print(stereoMapR_x)
+print(stereoMapR_y)
 
 
 def undistortRectify(frameR, frameL):
