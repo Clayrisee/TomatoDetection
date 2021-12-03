@@ -10,6 +10,8 @@ class TomatoModel:
         ----------
         onnx_path: str
                 Path onnx weights
+        threshold: float
+                Threshold for set minimum confidence of the model
         input_size: tuple
                 Input Image Size
         """
@@ -119,17 +121,30 @@ class TomatoModel:
     def __postprocess_result(self, postprocess_onnx, width, height):
         # print(postprocess_onnx)
         result_coors = []
-        labels = []
+        # labels = []
+        results = {
+            "tomato_count": 0,
+            "results" : []
+        }
 
         for x1, y1, x2, y2, _, conf, label in postprocess_onnx[0]:
             x1 = int(x1 * width)
             y1 = int(y1 * height)
             x2 = int(x2 * width)
             y2 = int(y2 * height)
+            bbox = tuple((x1, y1, x2, y2))
+            bbox = tuple(0 if i<0 else i for i in bbox)
+            result_item={
+                "bounding_box": bbox,
+                "label":self.class_names[label],
+                "confidence":conf
+            }
+            results["results"].append(result_item)
             result_coors.append(tuple((x1, y1, x2, y2)))
-            labels.append(f"{self.class_names[label]} conf: {conf}")
-        
-        return result_coors, labels
+            # labels.append(f"{self.class_names[label]} conf: {conf}")
+        if len(results["results"]) != 0:
+            results["tomato_count"] = len(results["results"])
+        return result_coors, results
 
 
     def predict(self, img):
@@ -138,11 +153,11 @@ class TomatoModel:
         input_onnx = self.ort_session.get_inputs()[0].name
         output_onnx = self.ort_session.run(None, {input_onnx: preprocess_img})
         postprocess_onnx = self.__postprocessing_onnx(output_onnx)
-        result_coors, labels = self.__postprocess_result(postprocess_onnx, widht_ori, height_ori)
+        result_coors, results = self.__postprocess_result(postprocess_onnx, widht_ori, height_ori)
         hsi_values = calculate_tomato_maturity_level(img, result_coors)
         # print("Posprocess onnx:", postprocess_onnx)
-        print("Coors :", result_coors)
-        print("label_outputs:", labels)
-        print("hsi_values", hsi_values)
+        # print("Coors :", result_coors)
+        # print("label_outputs:", labels)
+        # print("hsi_values", hsi_values)
         
-        return result_coors, labels
+        return results
