@@ -8,7 +8,7 @@ def convert_rgb_to_hsi(img):
     """
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     with np.errstate(divide="ignore", invalid="ignore"):
-        rgb = np.float(img) / 255
+        rgb = img / 255.0
         
         red = rgb[:, :, 0]
         green = rgb[:, :, 1]
@@ -39,7 +39,12 @@ def convert_rgb_to_hsi(img):
                         hue[i][j] = ((360 * math.pi) / 180.0) - hue[i][j]
             
             return hue
-        
+        h = cal_hue(red, blue, green)
+        s = cal_saturation(red, blue, green)
+        i = cal_intensity(red, blue, green)
+        print(h)
+        print(s)
+        print(i)
         hsi = cv2.merge((cal_hue(red, blue, green), cal_saturation(red, blue, green), cal_intensity(red, blue, green)))
         return hsi
 
