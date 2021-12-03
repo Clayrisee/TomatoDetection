@@ -8,7 +8,7 @@ def calculate_tomato_maturity_level(img, bboxs):
 
     bboxs = limit_bbox_coors(bboxs, img)
     for bbox in bboxs:
-        print(bbox)
+        # print(bbox)
         x1, y1, x2, y2 = bbox 
         tomato_img = img[y1:y2, x1:x2]
         # print(type(tomato_img))
