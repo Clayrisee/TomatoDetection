@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import onnxruntime as ort
+
+from modul.stereo_vision.triangulation import find_depth
+
+from .tools import find_centroid, match_bboxs, sorted_bboxs
 from .tomato_maturity_level import *
 
 class TomatoModel:
@@ -118,7 +122,7 @@ class TomatoModel:
 
         return bboxes_batch
     
-    def __postprocess_result(self, postprocess_onnx, width, height):
+    def __postprocess_result_single_img(self, postprocess_onnx, width, height):
         # print(postprocess_onnx)
         result_coors = []
         # labels = []
@@ -140,11 +144,60 @@ class TomatoModel:
                 "confidence":conf
             }
             results["results"].append(result_item)
-            result_coors.append(tuple((x1, y1, x2, y2)))
+            result_coors.append(bbox)
             # labels.append(f"{self.class_names[label]} conf: {conf}")
         if len(results["results"]) != 0:
             results["tomato_count"] = len(results["results"])
         return result_coors, results
+    
+    def __unpack_result_postprocess_onnx(self, postprocess_onnx, shape_img):
+        result_coors = []
+        labels = []
+        confidences = []
+        width, height = shape_img
+        for x1, y1, x2, y2, _, conf, label in postprocess_onnx:
+            x1 = int(x1 * width)
+            y1 = int(y1 * height)
+            x2 = int(x2 * width)
+            y2 = int(y2 * height)
+            bbox = tuple((x1, y1, x2, y2))
+            bbox = tuple(0 if i<0 else i for i in bbox)
+            result_coors.append(bbox)
+            labels.append(self.class_names[label])
+            confidences.append(conf)
+        return result_coors, labels, confidences
+
+    def __postprocess_result_stereo_vision(self, postporcess_onnx_left, postprocess_onnx_right, shape_img_left, shape_img_right):
+        depth_estimation_results = []
+        sorted_onnx_results_left = sorted_bboxs(postporcess_onnx_left[0])
+        sorted_onnx_results_right = sorted_bboxs(postprocess_onnx_right[0])
+        result_coors_left, result_labels_left, confs_left = self.__unpack_result_postprocess_onnx(sorted_onnx_results_left, shape_img_left)
+        result_coors_right, result_labels_right, confs_right = self.__unpack_result_postprocess_onnx(sorted_onnx_results_right, shape_img_right)
+        max_item, results_match_bboxs = match_bboxs(result_coors_left, result_coors_right)
+        result_labels_left, result_labels_right = result_labels_left[:max_item], result_labels_right[:max_item]
+        confs_left, confs_right = confs_left[:max_item], confs_right[:max_item]
+        results_left, results_right = results_match_bboxs
+        bboxs_left, centroids_left = results_left
+        bboxs_right, centroids_right = results_right
+        for centroid_left, centroid_right in zip(centroids_left, centroids_right):
+            zDepth = find_depth(centroid_left, centroid_right, shape_img_left[0], focal=6, alpha = 56.6, baseline=6)
+            depth_estimation_results.append(zDepth)
+        pass
+
+    def predict_stereo_vision(self, img_left, img_right):
+        w_left, h_left = img_left.shape[:2]
+        w_right, h_right = img_right.shape[:2]
+        input_onnx = self.ort_session.get_inputs()[0].name
+        if (w_left == w_right) and (h_left == h_right):
+            # Process image
+            img_left_preprocessed = self.__preprocessing_img(img_left)
+            img_right_prepreocesed = self.__preprocessing_img(img_right)
+            output_onnx_left = self.ort_session.run(None, {input_onnx: img_left_preprocessed})
+            output_onnx_right = self.ort_session.run(None, {input_onnx:img_right_prepreocesed})
+            output_onnx_left = self.__postprocessing_onnx(output_onnx_left)
+            output_onnx_right = self.__postprocessing_onnx(output_onnx_right)
+        else:
+            raise ValueError("input size of image left must equal as image right!")
 
 
     def predict(self, img):
@@ -153,8 +206,15 @@ class TomatoModel:
         input_onnx = self.ort_session.get_inputs()[0].name
         output_onnx = self.ort_session.run(None, {input_onnx: preprocess_img})
         postprocess_onnx = self.__postprocessing_onnx(output_onnx)
-        result_coors, results = self.__postprocess_result(postprocess_onnx, widht_ori, height_ori)
-        hsi_values = calculate_tomato_maturity_level(img, result_coors)
+        # print("POST PROCESS ONNX")
+        # print(postprocess_onnx)
+        result_coors, results = self.__postprocess_result_single_img(postprocess_onnx, widht_ori, height_ori)
+        centroid_arrays = find_centroid(result_coors)
+        centroid_arrays_sorted = sorted_bboxs(centroid_arrays)
+        # hsi_values = calculate_tomato_maturity_level(img, result_coors)
+        # print(centroid_arrays)
+        print(centroid_arrays_sorted)
+        # print(sorted_bboxs(result_coors))
         # print("Posprocess onnx:", postprocess_onnx)
         # print("Coors :", result_coors)
         # print("label_outputs:", labels)
