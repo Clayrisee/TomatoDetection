@@ -43,9 +43,9 @@ def convert_rgb_to_hsi(img):
         h = cal_hue(red, blue, green)
         s = cal_saturation(red, blue, green)
         i = cal_intensity(red, blue, green)
-        print(h)
-        print(s)
-        print(i)
+        print('hue       : ',h)
+        print('saturation: ', s)
+        print('intensity : ',i)
         hsi = cv2.merge((cal_hue(red, blue, green), cal_saturation(red, blue, green), cal_intensity(red, blue, green)))
         return hsi
 
@@ -84,5 +84,18 @@ def limit_bbox_coors(bboxs, img):
             result_bboxs.append((x1, y1, x2, y2))
     return result_bboxs
         
+def circle_crop(img):
+    # print(type(img)
+    hh, ww = img.shape[:2]
 
+    # define circles
+    radius = int((min(ww, hh)/2)*0.8)
+    yc = hh // 2
+    xc = ww // 2
 
+    # draw filled circles in white on black background as masks
+    mask = np.zeros(img.shape[:2], dtype="uint8")
+    mask = cv2.circle(mask, (xc,yc), radius, (255,255,255), -1)
+
+    img = cv2.bitwise_and(img, img, mask=mask)
+    return img
