@@ -2,18 +2,12 @@ import sys
 import numpy as np
 import cv2
 
-def find_depth(center_point_left, center_point_right, frame_left, frame_right, focal, alpha, baseline=6):
+def find_depth(center_point_left, center_point_right, width, focal, alpha, baseline=6):
     """
     Function for calculate depth estimation from stereo camera
     """
-    # convert focal length from mm to pixel
-    h_right, w_right, c_right = frame_right.shape
-    h_left, w_left, c_left = frame_left.shape
 
-    if w_left == w_right :
-        f_pixel = (w_right * 0.5) / np.tan(alpha * 0.5 * np.pi / 180)
-    else:
-        print("Left and Right camera do not have same pixel width")
+    f_pixel = (width * 0.5) / np.tan(alpha * 0.5 * np.pi / 180)
 
     # got top left x value for each frame
     x_right = center_point_right[0]
@@ -27,7 +21,7 @@ def find_depth(center_point_left, center_point_right, frame_left, frame_right, f
 
     return zDepth
 
-    # TODO 1: Tentuin returnan resultnya
-    # TODO 2: Tentuin limitasi objek antar 2 gambar, just in case deteksinya beda antara gambar 1 dan gambar 2
-    # TODO 3: Depthnya ditentuin dari sorted array image
+    # TODO 1: Tentuin returnan resultnya (DONE)
+    # TODO 2: Tentuin limitasi objek antar 2 gambar, just in case deteksinya beda antara gambar 1 dan gambar 2 (DONE)
+    # TODO 3: Depthnya ditentuin dari sorted array image (DONE)
 
