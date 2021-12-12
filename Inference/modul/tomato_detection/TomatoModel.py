@@ -20,7 +20,7 @@ class TomatoModel:
                 Input Image Size
         """
 
-        self.class_names = ["tomato"]
+        self.class_names = ["fully-ripe", "semi-ripe", "unripe"]
         self.input_size = input_size
         self.onnx_path = onnx_path
         self.threshold = threshold
@@ -168,6 +168,10 @@ class TomatoModel:
         return result_coors, labels, confidences
 
     def __postprocess_result_stereo_vision(self, postporcess_onnx_left, postprocess_onnx_right, shape_img_left, shape_img_right):
+        final_dict_results = {
+            "tomato_count":0,
+            "results":[]
+        }
         depth_estimation_results = []
         sorted_onnx_results_left = sorted_bboxs(postporcess_onnx_left[0])
         sorted_onnx_results_right = sorted_bboxs(postprocess_onnx_right[0])
@@ -182,7 +186,21 @@ class TomatoModel:
         for centroid_left, centroid_right in zip(centroids_left, centroids_right):
             zDepth = find_depth(centroid_left, centroid_right, shape_img_left[0], focal=6, alpha = 56.6, baseline=6)
             depth_estimation_results.append(zDepth)
-        pass
+        final_dict_results["tomato_count"] = max_item
+        
+        for bbox_left, bbox_right, result_label_left, result_label_right ,depth_estimation_result in zip(bboxs_left, bboxs_right, result_labels_left, result_labels_right,depth_estimation_results):
+            if result_label_left == result_label_right:
+                result = {
+                    "maturity": result_label_right,
+                    "bbox_left":bbox_left,
+                    "bbox_right":bbox_right,
+                    "depth": depth_estimation_result
+                }
+                final_dict_results["results"].append(result)
+            else:
+                continue
+
+        return final_dict_results
 
     def predict_stereo_vision(self, img_left, img_right):
         w_left, h_left = img_left.shape[:2]
@@ -196,6 +214,8 @@ class TomatoModel:
             output_onnx_right = self.ort_session.run(None, {input_onnx:img_right_prepreocesed})
             output_onnx_left = self.__postprocessing_onnx(output_onnx_left)
             output_onnx_right = self.__postprocessing_onnx(output_onnx_right)
+            final_results = self.__postprocess_result_stereo_vision(output_onnx_left, output_onnx_right, img_left.shape[:2], img_right.shape[:2])
+            return final_results
         else:
             raise ValueError("input size of image left must equal as image right!")
 
