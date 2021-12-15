@@ -99,3 +99,23 @@ def circle_crop(img):
 
     img = cv2.bitwise_and(img, img, mask=mask)
     return img
+
+def match_bboxs(left_bboxs, right_bboxs):
+    # check len bbox left and right
+    max_len = len(left_bboxs) if len(left_bboxs) < len(right_bboxs) else len(right_bboxs)
+    left_bboxs_centroid = find_centroid(left_bboxs[:max_len])
+    right_bboxs_centroid = find_centroid(right_bboxs[:max_len])
+    return max_len, ((left_bboxs[:max_len], left_bboxs_centroid),(right_bboxs[:max_len], right_bboxs_centroid))
+
+def sorted_bboxs(array):
+    return sorted(array, key=lambda k: (k[0], k[1]))
+
+def find_centroid(bboxs):
+    centroid_coors = []
+
+    for x1, y1, x2, y2 in bboxs:
+        x_center = (x1 + x2) // 2
+        y_center = (y1 + y2) // 2
+        centroid_coors.append((x_center, y_center))
+    
+    return centroid_coors
