@@ -14,15 +14,17 @@ imgR = cv2.imread("test_image/sample_right2.jpeg", 1)
 imgL = cv2.resize(imgL, (640,480), interpolation=cv2.INTER_LINEAR)
 imgR = cv2.resize(imgR, (640,480), interpolation=cv2.INTER_LINEAR)
 print(imgL.shape)
-print(imgR.shape)
 
-imgL, imgR = calibration.undistortRectify(imgL, imgR)
+imgL_calibrated, imgR_calibrated = calibration.undistortRectify(imgL, imgR)
+imgL_concat = np.concatenate((imgL, imgL_calibrated), axis=1)
+imgR_concat = np.concatenate((imgR, imgR_calibrated), axis=1)
+img_concat = np.concatenate((imgL_concat, imgR_concat), axis=0)
 
+print(model.predict(imgL_calibrated))
+# left_results = model.predict(imgL)
+# right_results = model.predict(imgR)
 
-# print(model.predict(img))
-left_results = model.predict(imgL)
-right_results = model.predict(imgR)
+# print(left_results)
+# print(right_results)
 
-import pprint
-pprint.pprint(left_results)
-pprint.pprint(right_results)
+cv2.imwrite('calibration.jpg',img_concat)

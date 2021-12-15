@@ -16,8 +16,6 @@ def calculate_tomato_maturity_level(img, bboxs):
         tomato_img = img[y1:y2, x1:x2]
         
         tomato_img = circle_crop(tomato_img)
-        import random
-        cv2.imwrite(str(random.random())+'.jpg', tomato_img)
         # print(tomato_img.shape)
         # print(tomato_img)
 
