@@ -3,7 +3,7 @@ import pprint
 import cv2
 
 from modul.tomato_detection.tools import find_hsi_value
-from modul.stereo_vision import calibration
+from modul.stereo_vision import calibration, object_pairing
 from utils import draw_predictions
 
 model = TomatoModel(onnx_path="model/yolov4_1_3_416_416_static.onnx")
