@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 def draw_bbox(img, prediction):
-    OFFSET = 70
+    OFFSET = 60
     for result in prediction['results']:
         x1, y1, x2, y2 = result['bounding_box'] 
         x1 += OFFSET
